@@ -18,9 +18,8 @@ DAO : Data Access Object
 public class DAO {
 
 	Connection conn;
-	PreparedStatement pstm;
+	PreparedStatement pstmt;
 	ResultSet rs;
-	ArrayList<VO> list;
 
 	/* 싱글톤 패턴
 	- 프로그램이 끝날 때까지 하나의 객체를 사용
@@ -36,9 +35,6 @@ public class DAO {
 	// 접속하기
 	public Connection getConnection() {
 		try {
-			
-			list = new ArrayList<VO>();
-			
 			// Oracle 드라이버 로딩
 			Class.forName("oracle.jdbc.OracleDriver");
 			String url = "jdbc:oracle:thin:@203.236.220.76:1521:xe";
@@ -66,13 +62,14 @@ public class DAO {
 			conn = getConnection();
 			
 			String sql = "SELECT * FROM member01 WHERE m_id = ? AND m_pw = ?";
-			pstm = conn.prepareStatement(sql);
+			pstmt = conn.prepareStatement(sql);
 			
-			pstm.setString(1, m_id);
-			pstm.setString(2, m_pw);
+			pstmt.setString(1, m_id);
+			pstmt.setString(2, m_pw);
 			
-			rs = pstm.executeQuery();
+			rs = pstmt.executeQuery();
 			
+			// rs 가 null이 아닌 경우에만 로그인 성공
 			if (rs.next()) {
 				// 로그인 성공 시 객체를 생성
 				vo = new VO();
@@ -90,7 +87,7 @@ public class DAO {
 		} finally {
 			try {
 				rs.close();
-				pstm.close();
+				pstmt.close();
 				conn.close();
 			} catch (Exception e2) {
 				System.out.println(e2);
@@ -100,24 +97,24 @@ public class DAO {
 		return vo;
 	}
 	
-// 2) 회원가입 메소드
+// 2) 회원가입 메소드 (CREATE)
 	
 	public int getInsert(String m_id, String m_pw, String m_name, String m_age) {
 		int result = 0;
 		try {
 			conn = getConnection();
 			String sql = "INSERT INTO member01 VALUES(members_seq.nextval, ?, ?, ?, ?, sysdate)";
-			pstm = conn.prepareStatement(sql);
-			pstm.setString(1, m_id);
-			pstm.setString(2, m_pw);
-			pstm.setString(3, m_name);
-			pstm.setString(4, m_age);
-			result = pstm.executeUpdate();
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setString(1, m_id);
+			pstmt.setString(2, m_pw);
+			pstmt.setString(3, m_name);
+			pstmt.setString(4, m_age);
+			result = pstmt.executeUpdate();
 		} catch (Exception e) {
 		} finally {
 			try {
 				rs.close();
-				pstm.close();
+				pstmt.close();
 				conn.close();
 			} catch (Exception e2) {
 			}
@@ -125,5 +122,93 @@ public class DAO {
 		return result;
 	}
 	
+// 3) 전체 리스트 조회 메소드 (SELECT)
+	// INSERT, UPDATE, DELETE 는 항상 반환형이 int
+	// SELECT 의 반환형은 매번 달라짐
+	
+	public ArrayList<VO> getList() {
+		ArrayList<VO> list = new ArrayList<VO>();
+		try {
+			conn = getConnection();
+			String sql = "SELECT * FROM member01 ORDER BY idx";
+			pstmt = conn.prepareStatement(sql);
+			rs = pstmt.executeQuery();
+			while (rs.next()) {
+				VO vo = new VO();
+				vo.setIdx(rs.getString("idx"));
+				vo.setM_id(rs.getString("m_id"));
+				vo.setM_pw(rs.getString("m_pw"));
+				vo.setM_name(rs.getString("m_name"));
+				vo.setM_age(rs.getString("m_age"));
+				vo.setM_reg(rs.getString("m_reg"));
+				
+				// 리스트에 추가
+				list.add(vo);
+			}
+			System.out.println(list.size());
+		} catch (Exception e) {
+			System.out.println(e);
+		} finally {
+			try {
+				rs.close();
+				pstmt.close();
+				conn.close();
+			} catch (Exception e2) {
+				System.out.println(e2);
+			}
+		}
+		return list;
+	}
+	
+// 4) 리스트 삭제 메소드 (DELETE)
+	
+	public int getDelete(String idx) {
+		int result = 0;
+		try {
+			conn = getConnection();
+			String sql = "DELETE FROM member01 WHERE idx = ?";
+			pstmt = conn.prepareStatement(sql);
+			
+			pstmt.setString(1, idx);
+			result = pstmt.executeUpdate();
+		} catch (Exception e) {
+			System.out.println(e);
+		} finally {
+			try {
+				pstmt.close();
+				conn.close();
+			} catch (Exception e2) {
+				System.out.println(e2);
+			}
+		}
+		return result;
+	}
+	
+// 5) 정보 수정 메소드 (UPDATE)
+	
+	public int getUpdate(String m_name, String m_age, String idx) {
+		int result = 0;
+		try {
+			conn = getConnection();
+			String sql = "UPDATE member01 SET m_name = ?, m_age = ? WHERE idx = ?";
+			pstmt = conn.prepareStatement(sql);
+			
+			pstmt.setString(1, m_name);
+			pstmt.setString(2, m_age);
+			pstmt.setString(3, idx);
+				
+			result = pstmt.executeUpdate();
+		} catch (Exception e) {
+			System.out.println(e);
+		} finally {
+			try {
+				pstmt.close();
+				conn.close();
+			} catch (Exception e2) {
+				System.out.println(e2);
+			}
+		}
+		return result;
+	}
 	
 }

@@ -16,7 +16,7 @@
 		VO vo = DAO.getInstance().getLogin(m_id, m_pw);
 	
 		// 로그인 정보는 보통 session에 저장
-		// 저장 이후 비로소 EL, JSTL 사용이 가능
+		// 4대 저장소에 저장한 이후 비로소 EL, JSTL 사용이 가능
 		session.setAttribute("vo", vo);
 	
 %>
